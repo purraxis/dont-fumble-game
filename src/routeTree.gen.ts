@@ -13,6 +13,8 @@ import { Route as PacksRouteImport } from './routes/packs'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShareCodeRouteImport } from './routes/share.$code'
+import { Route as ResultCodeRouteImport } from './routes/result.$code'
+import { Route as PlayCodeRouteImport } from './routes/play.$code'
 
 const PacksRoute = PacksRouteImport.update({
   id: '/packs',
@@ -34,17 +36,31 @@ const ShareCodeRoute = ShareCodeRouteImport.update({
   path: '/share/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResultCodeRoute = ResultCodeRouteImport.update({
+  id: '/result/$code',
+  path: '/result/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlayCodeRoute = PlayCodeRouteImport.update({
+  id: '/play/$code',
+  path: '/play/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
   '/packs': typeof PacksRoute
+  '/play/$code': typeof PlayCodeRoute
+  '/result/$code': typeof ResultCodeRoute
   '/share/$code': typeof ShareCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
   '/packs': typeof PacksRoute
+  '/play/$code': typeof PlayCodeRoute
+  '/result/$code': typeof ResultCodeRoute
   '/share/$code': typeof ShareCodeRoute
 }
 export interface FileRoutesById {
@@ -52,20 +68,43 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
   '/packs': typeof PacksRoute
+  '/play/$code': typeof PlayCodeRoute
+  '/result/$code': typeof ResultCodeRoute
   '/share/$code': typeof ShareCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/create' | '/packs' | '/share/$code'
+  fullPaths:
+    | '/'
+    | '/create'
+    | '/packs'
+    | '/play/$code'
+    | '/result/$code'
+    | '/share/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/create' | '/packs' | '/share/$code'
-  id: '__root__' | '/' | '/create' | '/packs' | '/share/$code'
+  to:
+    | '/'
+    | '/create'
+    | '/packs'
+    | '/play/$code'
+    | '/result/$code'
+    | '/share/$code'
+  id:
+    | '__root__'
+    | '/'
+    | '/create'
+    | '/packs'
+    | '/play/$code'
+    | '/result/$code'
+    | '/share/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CreateRoute: typeof CreateRoute
   PacksRoute: typeof PacksRoute
+  PlayCodeRoute: typeof PlayCodeRoute
+  ResultCodeRoute: typeof ResultCodeRoute
   ShareCodeRoute: typeof ShareCodeRoute
 }
 
@@ -99,6 +138,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/result/$code': {
+      id: '/result/$code'
+      path: '/result/$code'
+      fullPath: '/result/$code'
+      preLoaderRoute: typeof ResultCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/play/$code': {
+      id: '/play/$code'
+      path: '/play/$code'
+      fullPath: '/play/$code'
+      preLoaderRoute: typeof PlayCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,6 +159,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CreateRoute: CreateRoute,
   PacksRoute: PacksRoute,
+  PlayCodeRoute: PlayCodeRoute,
+  ResultCodeRoute: ResultCodeRoute,
   ShareCodeRoute: ShareCodeRoute,
 }
 export const routeTree = rootRouteImport
