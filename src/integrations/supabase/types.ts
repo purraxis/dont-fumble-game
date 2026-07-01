@@ -14,7 +14,160 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      answers: {
+        Row: {
+          answer_text: string
+          better_answer: string
+          challenge_id: string
+          created_at: string
+          id: string
+          question_id: string
+          question_text: string
+          score: number
+          verdict: string
+          what_fumbled: string
+          what_worked: string
+        }
+        Insert: {
+          answer_text: string
+          better_answer: string
+          challenge_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+          question_text: string
+          score: number
+          verdict: string
+          what_fumbled: string
+          what_worked: string
+        }
+        Update: {
+          answer_text?: string
+          better_answer?: string
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          question_text?: string
+          score?: number
+          verdict?: string
+          what_fumbled?: string
+          what_worked?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          pack_id: string
+          sender_name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          pack_id: string
+          sender_name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          pack_id?: string
+          sender_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "question_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_packs: {
+        Row: {
+          bg_color: string
+          created_at: string
+          description: string
+          emoji: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          bg_color?: string
+          created_at?: string
+          description: string
+          emoji: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          bg_color?: string
+          created_at?: string
+          description?: string
+          emoji?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          created_at: string
+          id: string
+          pack_id: string
+          sort_order: number
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pack_id: string
+          sort_order?: number
+          text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pack_id?: string
+          sort_order?: number
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "question_packs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
