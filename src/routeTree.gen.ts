@@ -9,38 +9,121 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PacksRouteImport } from './routes/packs'
+import { Route as CreateRouteImport } from './routes/create'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShareCodeRouteImport } from './routes/share.$code'
+import { Route as ResultCodeRouteImport } from './routes/result.$code'
+import { Route as PlayCodeRouteImport } from './routes/play.$code'
 
+const PacksRoute = PacksRouteImport.update({
+  id: '/packs',
+  path: '/packs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateRoute = CreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShareCodeRoute = ShareCodeRouteImport.update({
+  id: '/share/$code',
+  path: '/share/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultCodeRoute = ResultCodeRouteImport.update({
+  id: '/result/$code',
+  path: '/result/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlayCodeRoute = PlayCodeRouteImport.update({
+  id: '/play/$code',
+  path: '/play/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/create': typeof CreateRoute
+  '/packs': typeof PacksRoute
+  '/play/$code': typeof PlayCodeRoute
+  '/result/$code': typeof ResultCodeRoute
+  '/share/$code': typeof ShareCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/create': typeof CreateRoute
+  '/packs': typeof PacksRoute
+  '/play/$code': typeof PlayCodeRoute
+  '/result/$code': typeof ResultCodeRoute
+  '/share/$code': typeof ShareCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/create': typeof CreateRoute
+  '/packs': typeof PacksRoute
+  '/play/$code': typeof PlayCodeRoute
+  '/result/$code': typeof ResultCodeRoute
+  '/share/$code': typeof ShareCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/create'
+    | '/packs'
+    | '/play/$code'
+    | '/result/$code'
+    | '/share/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/create'
+    | '/packs'
+    | '/play/$code'
+    | '/result/$code'
+    | '/share/$code'
+  id:
+    | '__root__'
+    | '/'
+    | '/create'
+    | '/packs'
+    | '/play/$code'
+    | '/result/$code'
+    | '/share/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CreateRoute: typeof CreateRoute
+  PacksRoute: typeof PacksRoute
+  PlayCodeRoute: typeof PlayCodeRoute
+  ResultCodeRoute: typeof ResultCodeRoute
+  ShareCodeRoute: typeof ShareCodeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/packs': {
+      id: '/packs'
+      path: '/packs'
+      fullPath: '/packs'
+      preLoaderRoute: typeof PacksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create': {
+      id: '/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +131,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/share/$code': {
+      id: '/share/$code'
+      path: '/share/$code'
+      fullPath: '/share/$code'
+      preLoaderRoute: typeof ShareCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/result/$code': {
+      id: '/result/$code'
+      path: '/result/$code'
+      fullPath: '/result/$code'
+      preLoaderRoute: typeof ResultCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/play/$code': {
+      id: '/play/$code'
+      path: '/play/$code'
+      fullPath: '/play/$code'
+      preLoaderRoute: typeof PlayCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CreateRoute: CreateRoute,
+  PacksRoute: PacksRoute,
+  PlayCodeRoute: PlayCodeRoute,
+  ResultCodeRoute: ResultCodeRoute,
+  ShareCodeRoute: ShareCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
