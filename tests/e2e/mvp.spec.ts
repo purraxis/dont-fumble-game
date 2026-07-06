@@ -69,6 +69,27 @@ test("invalid challenge code shows a friendly error", async ({ page }) => {
   await expect(page.getByText(/ask them to resend/i)).toBeVisible();
 });
 
+test("double-click create does not create duplicate challenges", async ({ page }) => {
+  await page.addInitScript(() => {
+    sessionStorage.setItem("df_sender", "Bae");
+  });
+
+  await page.goto("/packs");
+  await page.getByRole("button", { name: /worm test/i }).click();
+  await page.getByRole("button", { name: /create challenge/i }).dblclick();
+  await expect(page).toHaveURL(/\/share\/[A-Za-z0-9]+/);
+
+  const challengeCount = await page.evaluate(
+    () =>
+      (
+        globalThis as typeof globalThis & {
+          __DF_E2E_STATE__?: { challenges?: unknown[] };
+        }
+      ).__DF_E2E_STATE__?.challenges?.length ?? 0,
+  );
+  expect(challengeCount).toBe(1);
+});
+
 test("invalid result code shows a friendly error", async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem("df_play_session_INVALID-CODE", "dfps_1234567890abcdefghijklmn");

@@ -1,7 +1,3 @@
-import { customAlphabet } from "nanoid";
-
-export const generateChallengeCode = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 6);
-
 export const PACK_COLOR: Record<string, { bg: string; text: string; ring: string }> = {
   "brand-yellow": { bg: "bg-brand-yellow", text: "text-ink", ring: "ring-brand-yellow/30" },
   "brand-purple": { bg: "bg-brand-purple", text: "text-white", ring: "ring-brand-purple/30" },

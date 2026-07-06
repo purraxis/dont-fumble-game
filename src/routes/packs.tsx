@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { recordE2eChallengeForClient, supabase } from "@/integrations/supabase/client";
 import { AppShell, BrutalCard, BrutalButton } from "@/components/AppShell";
-import { PACK_COLOR, generateChallengeCode } from "@/lib/game";
+import { createChallenge as createChallengeOnServer } from "@/lib/challenge.functions";
+import { PACK_COLOR } from "@/lib/game";
 
 export const Route = createFileRoute("/packs")({
   head: () => ({ meta: [{ title: "Choose your trap — Don't Fumble" }] }),
@@ -21,9 +23,11 @@ type Pack = {
 
 function PacksPage() {
   const navigate = useNavigate();
+  const runCreateChallenge = useServerFn(createChallengeOnServer);
   const [sender, setSender] = useState<string>("");
   const [selected, setSelected] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     const s = sessionStorage.getItem("df_sender");
@@ -52,18 +56,26 @@ function PacksPage() {
 
   const hasPacks = Boolean(packs?.length);
 
-  async function createChallenge() {
-    if (!selected || !sender) return;
+  async function handleCreateChallenge() {
+    if (!selected || !sender || creating) return;
     setCreating(true);
+    setCreateError(null);
     try {
-      const code = generateChallengeCode();
-      const { error } = await supabase.from("challenges").insert({
-        code,
+      const challenge = await runCreateChallenge({
+        data: {
+          packId: selected,
+          creatorName: sender,
+        },
+      });
+
+      recordE2eChallengeForClient({
+        code: challenge.code,
         sender_name: sender,
         pack_id: selected,
       });
-      if (error) throw error;
-      navigate({ to: "/share/$code", params: { code } });
+      navigate({ to: "/share/$code", params: { code: challenge.code } });
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : "Could not create challenge.");
     } finally {
       setCreating(false);
     }
@@ -113,6 +125,13 @@ function PacksPage() {
           </BrutalCard>
         )}
 
+        {createError && (
+          <BrutalCard color="bg-fumble-red/10" className="border-fumble-red p-4">
+            <h2 className="font-display text-lg font-bold text-fumble-red">Trap did not set</h2>
+            <p className="mt-2 text-sm font-medium text-ink/70">{createError}</p>
+          </BrutalCard>
+        )}
+
         <div className="space-y-3">
           {packs?.map((pack) => {
             const c = PACK_COLOR[pack.bg_color] ?? PACK_COLOR["brand-yellow"];
@@ -147,7 +166,7 @@ function PacksPage() {
       <div className="sticky bottom-0 border-t-2 border-ink bg-brand-cream p-4">
         <BrutalButton
           color="bg-brand-purple text-white"
-          onClick={createChallenge}
+          onClick={handleCreateChallenge}
           disabled={!selected || creating || !hasPacks || isError}
         >
           {creating ? "Setting the trap..." : "CREATE CHALLENGE →"}

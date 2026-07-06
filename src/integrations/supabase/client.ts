@@ -20,6 +20,7 @@ type E2eState = {
   challenges: E2eChallenge[];
   answers: E2eAnswer[];
 };
+type E2eChallengeInput = Omit<E2eChallenge, "id">;
 
 const e2ePack = {
   id: "pack-worm",
@@ -129,6 +130,19 @@ export function recordE2eAnswerForResult(answer: E2eAnswerInput) {
   });
 }
 
+export function recordE2eChallengeForClient(challenge: E2eChallengeInput) {
+  if (import.meta.env.VITE_E2E_MOCK_SUPABASE !== "true") return;
+
+  const state = getE2eState();
+  const existing = state.challenges.find((item) => item.code === challenge.code);
+  if (existing) {
+    Object.assign(existing, challenge);
+    return;
+  }
+
+  state.challenges.push({ ...challenge, id: `challenge-${state.challenges.length + 1}` });
+}
+
 function getE2ePackMode(): E2ePackMode {
   if (typeof window === "undefined") return "happy";
   const mode = window.sessionStorage.getItem("df_e2e_pack_mode");
@@ -143,10 +157,9 @@ function createE2eSupabaseClient() {
           return createE2eQuery(table);
         },
         async insert(payload: unknown) {
-          const state = getE2eState();
           if (table === "challenges") {
             const challenge = payload as E2eChallenge;
-            state.challenges.push({ ...challenge, id: "challenge-1" });
+            recordE2eChallengeForClient(challenge);
           }
           if (table === "answers") {
             recordE2eAnswerForResult(payload as E2eAnswerInput);
