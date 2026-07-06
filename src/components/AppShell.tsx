@@ -29,9 +29,7 @@ export function BrutalCard({
   color?: string;
 }) {
   return (
-    <div
-      className={`rounded-3xl border-2 border-ink neubrutal-shadow ${color} ${className}`}
-    >
+    <div className={`rounded-3xl border-2 border-ink neubrutal-shadow ${color} ${className}`}>
       {children}
     </div>
   );

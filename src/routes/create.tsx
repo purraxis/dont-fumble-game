@@ -21,9 +21,7 @@ function CreatePage() {
   return (
     <AppShell>
       <form onSubmit={onSubmit} className="space-y-6 p-6 pb-24">
-        <div className="text-xs font-bold uppercase tracking-widest text-ink/50">
-          Step 1 of 3
-        </div>
+        <div className="text-xs font-bold uppercase tracking-widest text-ink/50">Step 1 of 3</div>
         <h1 className="font-display text-4xl font-bold leading-tight">
           Who's setting the trap? 😈
         </h1>

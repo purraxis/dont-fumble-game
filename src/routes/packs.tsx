@@ -31,8 +31,15 @@ function PacksPage() {
     else setSender(s);
   }, [navigate]);
 
-  const { data: packs, isLoading } = useQuery({
+  const {
+    data: packs,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["packs"],
+    retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("question_packs")
@@ -42,6 +49,8 @@ function PacksPage() {
       return data as Pack[];
     },
   });
+
+  const hasPacks = Boolean(packs?.length);
 
   async function createChallenge() {
     if (!selected || !sender) return;
@@ -66,14 +75,43 @@ function PacksPage() {
         <div className="text-xs font-bold uppercase tracking-widest text-ink/50">
           Step 2 of 3 · {sender && <>Hi {sender} 👋</>}
         </div>
-        <h1 className="font-display text-4xl font-bold leading-tight">
-          Choose your weapon
-        </h1>
+        <h1 className="font-display text-4xl font-bold leading-tight">Choose your weapon</h1>
         <p className="text-sm text-ink/60">
-          Every pack has 4–5 questions. Pick your poison.
+          Every pack has a batch of impossible questions. Pick your poison.
         </p>
 
-        {isLoading && <div className="text-center py-12 text-ink/40 font-medium">Loading packs...</div>}
+        {isLoading && (
+          <div className="text-center py-12 text-ink/40 font-medium">Loading packs...</div>
+        )}
+
+        {isError && (
+          <BrutalCard color="bg-fumble-red/10" className="space-y-4 border-fumble-red p-5">
+            <div>
+              <h2 className="font-display text-xl font-bold text-fumble-red">
+                The packs fumbled loading
+              </h2>
+              <p className="mt-2 text-sm font-medium text-ink/70">
+                Refresh and try again. If this keeps happening, Supabase may not be connected yet.
+              </p>
+              <p className="mt-3 break-words rounded-lg bg-white/70 p-3 font-mono text-xs text-ink/50">
+                {error instanceof Error ? error.message : "Unknown Supabase error"}
+              </p>
+            </div>
+            <BrutalButton color="bg-white text-ink" onClick={() => void refetch()}>
+              Try again
+            </BrutalButton>
+          </BrutalCard>
+        )}
+
+        {!isLoading && !isError && !hasPacks && (
+          <BrutalCard color="bg-brand-yellow" className="space-y-3 p-5">
+            <h2 className="font-display text-xl font-bold">No traps loaded yet</h2>
+            <p className="text-sm font-medium text-ink/70">
+              The app is ready, but the question packs have not been seeded. Run the Supabase seed,
+              then come back and choose your weapon.
+            </p>
+          </BrutalCard>
+        )}
 
         <div className="space-y-3">
           {packs?.map((pack) => {
@@ -84,7 +122,9 @@ function PacksPage() {
                 key={pack.id}
                 onClick={() => setSelected(pack.id)}
                 className={`w-full text-left rounded-3xl border-2 border-ink ${c.bg} ${c.text} p-5 neubrutal-shadow-sm transition-all ${
-                  isSelected ? "ring-4 ring-ink translate-x-[-2px] translate-y-[-2px] neubrutal-shadow" : ""
+                  isSelected
+                    ? "ring-4 ring-ink translate-x-[-2px] translate-y-[-2px] neubrutal-shadow"
+                    : ""
                 }`}
               >
                 <div className="flex items-center gap-4">
@@ -92,8 +132,10 @@ function PacksPage() {
                     {pack.emoji}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-display text-xl font-bold">{pack.name}</div>
-                    <div className="text-sm opacity-90 truncate">{pack.description}</div>
+                    <div className="break-words font-display text-xl font-bold">{pack.name}</div>
+                    <div className="mt-1 break-words text-sm leading-snug opacity-90">
+                      {pack.description}
+                    </div>
                   </div>
                   {isSelected && <div className="text-2xl">✓</div>}
                 </div>
@@ -106,7 +148,7 @@ function PacksPage() {
         <BrutalButton
           color="bg-brand-purple text-white"
           onClick={createChallenge}
-          disabled={!selected || creating}
+          disabled={!selected || creating || !hasPacks || isError}
         >
           {creating ? "Setting the trap..." : "CREATE CHALLENGE →"}
         </BrutalButton>

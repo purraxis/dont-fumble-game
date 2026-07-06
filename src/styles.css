@@ -47,13 +47,13 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* Don't Fumble brand */
-  --color-brand-yellow: #FFDE59;
-  --color-brand-purple: #8B5CF6;
-  --color-brand-pink: #FF6AC1;
-  --color-brand-green: #22C55E;
-  --color-brand-cream: #FDFCF0;
-  --color-fumble-red: #F43F5E;
-  --color-ink: #1E293B;
+  --color-brand-yellow: #ffde59;
+  --color-brand-purple: #8b5cf6;
+  --color-brand-pink: #ff6ac1;
+  --color-brand-green: #22c55e;
+  --color-brand-cream: #fdfcf0;
+  --color-fumble-red: #f43f5e;
+  --color-ink: #1e293b;
   --font-display: "Fredoka", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
 }
@@ -139,15 +139,20 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+  }
 }
 
 @utility neubrutal-shadow {
-  box-shadow: 4px 4px 0px 0px #1E293B;
+  box-shadow: 4px 4px 0px 0px #1e293b;
 }
 @utility neubrutal-shadow-sm {
-  box-shadow: 2px 2px 0px 0px #1E293B;
+  box-shadow: 2px 2px 0px 0px #1e293b;
 }
 @utility neubrutal-shadow-lg {
-  box-shadow: 6px 6px 0px 0px #1E293B;
+  box-shadow: 6px 6px 0px 0px #1e293b;
 }
