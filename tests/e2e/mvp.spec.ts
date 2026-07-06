@@ -55,6 +55,11 @@ test("happy path: landing to result on mobile", async ({ page }) => {
   await expect(page.getByText(/final verdict/i)).toBeVisible();
   await expect(page.getByText("84").first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
+
+  await page.reload();
+  await expect(page.getByText(/final verdict/i)).toBeVisible();
+  await expect(page.getByText("84").first()).toBeVisible();
+  await expectNoHorizontalOverflow(page);
 });
 
 test("invalid challenge code shows a friendly error", async ({ page }) => {
@@ -62,6 +67,18 @@ test("invalid challenge code shows a friendly error", async ({ page }) => {
 
   await expect(page.getByRole("heading", { name: /challenge not found/i })).toBeVisible();
   await expect(page.getByText(/ask them to resend/i)).toBeVisible();
+});
+
+test("invalid result code shows a friendly error", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("df_play_session_INVALID-CODE", "dfps_1234567890abcdefghijklmn");
+  });
+
+  await page.goto("/result/invalid-code");
+
+  await expect(page.getByRole("heading", { name: /result not ready/i })).toBeVisible();
+  await expect(page.getByText(/same browser session/i)).toBeVisible();
+  await expectNoHorizontalOverflow(page);
 });
 
 test("packs page handles empty data", async ({ page }) => {

@@ -7,6 +7,7 @@
 - Added no-login play session tokens stored per challenge in browser localStorage.
 - Added `answers.session_token` migration support and duplicate protection for one answer per challenge/question/session.
 - Moved answer scoring and answer persistence behind the `submitAnswer` server function.
+- Moved result aggregation behind the `loadResult` server function.
 - Kept Lovable AI as the scoring gateway and preserved E2E fake AI/Supabase support.
 - Updated `/packs` to handle empty data and Supabase query errors gracefully.
 
@@ -14,7 +15,6 @@
 
 - RLS lockdown is still pending.
 - Server-side challenge creation is still pending.
-- Server-side result aggregation is still pending.
 - No auth, users, couples, streaks, reports, payments, leaderboard, voice notes, or native app features were added.
 - The app remains TanStack Start/Vite and was not migrated to Next.js.
 
@@ -43,4 +43,4 @@ Do not prefix `SUPABASE_SERVICE_ROLE_KEY` with `VITE_`; it must stay server-only
 
 ## Next Task
 
-Move result aggregation server-side so the browser no longer directly computes or trusts final scores from client-readable answer rows.
+Move challenge creation server-side, then lock down RLS once all launch-critical writes use trusted server functions.

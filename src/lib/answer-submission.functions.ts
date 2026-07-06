@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { recordE2eServerAnswer } from "@/lib/e2e-server-state";
 import { FeedbackSchema, generateFeedbackForAnswer, type Feedback } from "@/lib/feedback.functions";
 import { isValidPlaySessionToken } from "@/lib/play-session";
 
@@ -147,11 +148,22 @@ async function submitE2eAnswer(input: SubmitAnswerInput): Promise<Feedback> {
   const question = e2eQuestions.get(input.questionId);
   if (!question) throw new Error("Question not found");
 
-  return generateFeedbackForAnswer({
+  const feedback = await generateFeedbackForAnswer({
     question,
     answer: input.answerText,
     packName: "Worm Test",
   });
+
+  recordE2eServerAnswer({
+    challengeCode: input.challengeCode,
+    questionId: input.questionId,
+    sessionToken: input.sessionToken,
+    questionText: question,
+    answerText: input.answerText,
+    feedback,
+  });
+
+  return feedback;
 }
 
 async function submitRealAnswer(input: SubmitAnswerInput): Promise<Feedback> {
