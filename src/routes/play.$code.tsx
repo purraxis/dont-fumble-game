@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { recordE2eAnswerForResult, supabase } from "@/integrations/supabase/client";
 import { AppShell, BrutalCard, BrutalButton } from "@/components/AppShell";
-import { generateFeedback, type Feedback } from "@/lib/feedback.functions";
+import { submitAnswer } from "@/lib/answer-submission.functions";
+import type { Feedback } from "@/lib/feedback.functions";
 import { verdictForScore } from "@/lib/game";
+import { getOrCreatePlaySessionToken } from "@/lib/play-session";
 
 export const Route = createFileRoute("/play/$code")({
   head: ({ params }) => ({
@@ -15,6 +17,7 @@ export const Route = createFileRoute("/play/$code")({
 });
 
 type Question = { id: string; text: string };
+type QuestionPackSummary = { name?: string | null; emoji?: string | null } | null;
 type ChallengeData = {
   id: string;
   code: string;
@@ -28,10 +31,11 @@ type ChallengeData = {
 function PlayPage() {
   const { code } = Route.useParams();
   const navigate = useNavigate();
-  const runFeedback = useServerFn(generateFeedback);
+  const runSubmitAnswer = useServerFn(submitAnswer);
 
   const { data, isLoading, error } = useQuery<ChallengeData>({
     queryKey: ["play", code],
+    retry: false,
     queryFn: async () => {
       const { data: ch, error: e1 } = await supabase
         .from("challenges")
@@ -46,7 +50,7 @@ function PlayPage() {
         .eq("pack_id", ch.pack_id)
         .order("sort_order");
       if (e2) throw e2;
-      const pack = ch.question_packs as any;
+      const pack = ch.question_packs as QuestionPackSummary;
       return {
         id: ch.id,
         code: ch.code,
@@ -64,6 +68,11 @@ function PlayPage() {
   const [phase, setPhase] = useState<"answer" | "loading" | "feedback">("answer");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    getOrCreatePlaySessionToken(code, window.localStorage);
+  }, [code]);
 
   if (isLoading) {
     return (
@@ -88,29 +97,38 @@ function PlayPage() {
   const total = data.questions.length;
 
   async function submit() {
-    if (!answer.trim() || !q) return;
+    if (!answer.trim() || !q || isSubmitting) return;
+    const sessionToken = getOrCreatePlaySessionToken(code, window.localStorage);
+    setIsSubmitting(true);
     setPhase("loading");
     setErr(null);
     try {
-      const fb = await runFeedback({
-        data: { question: q.text, answer: answer.trim(), packName: data!.pack_name },
+      const fb = await runSubmitAnswer({
+        data: {
+          challengeCode: code,
+          questionId: q.id,
+          answerText: answer,
+          sessionToken,
+        },
       });
-      await supabase.from("answers").insert({
+
+      recordE2eAnswerForResult({
         challenge_id: data!.id,
         question_id: q.id,
+        session_token: sessionToken,
         question_text: q.text,
         answer_text: answer.trim(),
         score: fb.score,
         verdict: fb.verdict,
-        what_worked: fb.what_worked,
         what_fumbled: fb.what_fumbled,
-        better_answer: fb.better_answer,
       });
       setFeedback(fb);
       setPhase("feedback");
-    } catch (e: any) {
-      setErr(e?.message ?? "Something broke. Try again.");
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Something broke. Try again.");
       setPhase("answer");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -151,10 +169,8 @@ function PlayPage() {
 
         {phase !== "feedback" ? (
           <>
-            <p className="mb-2 text-sm font-bold text-brand-purple">
-              {data.sender_name} asks:
-            </p>
-            <h1 className="mb-6 font-display text-3xl font-bold leading-tight text-balance">
+            <p className="mb-2 text-sm font-bold text-brand-purple">{data.sender_name} asks:</p>
+            <h1 className="mb-6 break-words font-display text-3xl font-bold leading-tight text-balance">
               "{q?.text}"
             </h1>
 
@@ -175,7 +191,7 @@ function PlayPage() {
                 <BrutalButton
                   color="bg-brand-green text-white"
                   onClick={submit}
-                  disabled={!answer.trim() || phase === "loading"}
+                  disabled={!answer.trim() || phase === "loading" || isSubmitting}
                 >
                   {phase === "loading" ? "AI is judging you..." : "SUBMIT ANSWER"}
                 </BrutalButton>
@@ -213,26 +229,26 @@ function FeedbackView({
   return (
     <div className="space-y-5">
       <BrutalCard className="relative p-6">
-        <div className={`absolute -right-2 -top-4 rotate-6 rounded-full border-2 border-ink px-4 py-1 font-display text-sm font-bold text-white neubrutal-shadow-sm ${v.color}`}>
+        <div
+          className={`absolute -right-2 -top-4 rotate-6 rounded-full border-2 border-ink px-4 py-1 font-display text-sm font-bold text-white neubrutal-shadow-sm ${v.color}`}
+        >
           {v.emoji} {v.label}
         </div>
         <div className="flex items-center gap-4">
           <div className="grid size-24 shrink-0 place-items-center rounded-full border-4 border-ink bg-white">
             <div className="text-center">
               <div className="font-display text-4xl font-black leading-none">{feedback.score}</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-ink/40">/100</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-ink/40">
+                /100
+              </div>
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <div className="font-display text-xl font-bold leading-tight">
-              {feedback.verdict}
-            </div>
+            <div className="font-display text-xl font-bold leading-tight">{feedback.verdict}</div>
             <div className="mt-1 text-xs text-ink/50">{v.sub}</div>
           </div>
         </div>
-        <p className="mt-4 rounded-lg bg-ink/5 p-3 text-xs italic text-ink/70">
-          Q: {question}
-        </p>
+        <p className="mt-4 rounded-lg bg-ink/5 p-3 text-xs italic text-ink/70">Q: {question}</p>
       </BrutalCard>
 
       <BrutalCard color="bg-brand-green/10" className="border-brand-green p-4">

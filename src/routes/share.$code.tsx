@@ -11,6 +11,8 @@ export const Route = createFileRoute("/share/$code")({
   component: SharePage,
 });
 
+type QuestionPackSummary = { name?: string | null; emoji?: string | null } | null;
+
 function SharePage() {
   const { code } = Route.useParams();
   const [origin, setOrigin] = useState("");
@@ -34,6 +36,7 @@ function SharePage() {
   });
 
   const url = origin ? `${origin}/play/${code}` : "";
+  const pack = data?.question_packs as QuestionPackSummary | undefined;
 
   async function share() {
     if (!url) return;
@@ -68,12 +71,12 @@ function SharePage() {
           <div className="text-xs font-bold uppercase tracking-widest text-ink/60">
             Your challenge code
           </div>
-          <div className="my-2 font-display text-6xl font-bold tracking-widest">
-            {code}
-          </div>
+          <div className="my-2 font-display text-6xl font-bold tracking-widest">{code}</div>
           <div className="text-sm font-medium">
-            {data?.question_packs && (
-              <>Pack: {(data.question_packs as any).emoji} {(data.question_packs as any).name}</>
+            {pack && (
+              <>
+                Pack: {pack.emoji} {pack.name}
+              </>
             )}
           </div>
         </BrutalCard>
@@ -91,9 +94,7 @@ function SharePage() {
         </BrutalCard>
 
         <Link to="/play/$code" params={{ code }}>
-          <BrutalButton color="bg-white text-ink">
-            Preview as partner →
-          </BrutalButton>
+          <BrutalButton color="bg-white text-ink">Preview as partner →</BrutalButton>
         </Link>
 
         <p className="text-center text-xs font-bold uppercase tracking-widest text-ink/40">

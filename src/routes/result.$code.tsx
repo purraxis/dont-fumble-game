@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell, BrutalCard, BrutalButton } from "@/components/AppShell";
 import { overallBadge, verdictForScore } from "@/lib/game";
+import { isValidPlaySessionToken, playSessionStorageKey } from "@/lib/play-session";
 
 export const Route = createFileRoute("/result/$code")({
   head: ({ params }) => ({
@@ -11,6 +12,15 @@ export const Route = createFileRoute("/result/$code")({
   }),
   component: ResultPage,
 });
+
+type QuestionPackSummary = { name?: string | null; emoji?: string | null } | null;
+type AnswerSummary = {
+  score: number;
+  verdict: string;
+  question_text: string;
+  answer_text: string;
+  what_fumbled: string;
+};
 
 function ResultPage() {
   const { code } = Route.useParams();
@@ -24,27 +34,41 @@ function ResultPage() {
     queryFn: async () => {
       const { data: ch, error } = await supabase
         .from("challenges")
-        .select("id, sender_name, question_packs(name, emoji), answers(score, verdict, question_text, answer_text, what_fumbled)")
+        .select("id, sender_name, question_packs(name, emoji)")
         .eq("code", code)
         .maybeSingle();
       if (error) throw error;
-      return ch;
+      if (!ch) return null;
+
+      const sessionToken =
+        typeof window === "undefined"
+          ? null
+          : window.localStorage.getItem(playSessionStorageKey(code));
+
+      let answersQuery = supabase
+        .from("answers")
+        .select("score, verdict, question_text, answer_text, what_fumbled")
+        .eq("challenge_id", ch.id);
+
+      if (isValidPlaySessionToken(sessionToken)) {
+        answersQuery = answersQuery.eq("session_token", sessionToken);
+      }
+
+      const { data: answers, error: answersError } = await answersQuery.order("created_at");
+      if (answersError) throw answersError;
+
+      return { ...ch, answers: (answers ?? []) as AnswerSummary[] };
     },
   });
 
-  const answers = (data?.answers ?? []) as Array<{
-    score: number;
-    verdict: string;
-    question_text: string;
-    answer_text: string;
-    what_fumbled: string;
-  }>;
+  const answers = data?.answers ?? [];
 
   const avg = answers.length
     ? Math.round(answers.reduce((s, a) => s + a.score, 0) / answers.length)
     : 0;
   const badge = overallBadge(avg);
   const v = verdictForScore(avg);
+  const pack = data?.question_packs as QuestionPackSummary | undefined;
 
   async function share() {
     const url = `${origin}/play/${code}`;
@@ -53,7 +77,9 @@ function ResultPage() {
       try {
         await navigator.share({ title: "Don't Fumble", text, url });
         return;
-      } catch {}
+      } catch {
+        // Fall through to clipboard copy.
+      }
     }
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -68,7 +94,9 @@ function ResultPage() {
         </div>
 
         <BrutalCard color="bg-ink" className="relative overflow-hidden p-8 text-center text-white">
-          <div className={`mx-auto mb-4 grid size-32 place-items-center rounded-full border-4 border-white ${v.color} neubrutal-shadow-lg`}>
+          <div
+            className={`mx-auto mb-4 grid size-32 place-items-center rounded-full border-4 border-white ${v.color} neubrutal-shadow-lg`}
+          >
             <div className="text-6xl">{v.emoji}</div>
           </div>
           <div className="font-display text-3xl font-bold leading-tight">{badge.title}</div>
@@ -81,7 +109,8 @@ function ResultPage() {
           </div>
           {data && (
             <div className="mt-4 text-xs text-white/50">
-              Challenge from <span className="text-brand-yellow font-bold">{data.sender_name}</span> · {(data.question_packs as any)?.emoji} {(data.question_packs as any)?.name}
+              Challenge from <span className="text-brand-yellow font-bold">{data.sender_name}</span>{" "}
+              · {pack?.emoji} {pack?.name}
             </div>
           )}
         </BrutalCard>
@@ -94,7 +123,9 @@ function ResultPage() {
               return (
                 <BrutalCard key={i} className="p-4">
                   <div className="flex items-start gap-3">
-                    <div className={`grid size-12 shrink-0 place-items-center rounded-xl border-2 border-ink ${av.color} font-display text-lg font-black text-white`}>
+                    <div
+                      className={`grid size-12 shrink-0 place-items-center rounded-xl border-2 border-ink ${av.color} font-display text-lg font-black text-white`}
+                    >
                       {a.score}
                     </div>
                     <div className="min-w-0 flex-1">

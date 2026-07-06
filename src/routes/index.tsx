@@ -17,7 +17,8 @@ function Landing() {
             Will they pass the vibe check?
           </h1>
           <p className="mb-6 text-purple-100 font-medium">
-            Send your partner impossible questions. Let a very judgmental AI decide if they cooked or fumbled the bag.
+            Send your partner impossible questions. Let a very judgmental AI decide if they cooked
+            or fumbled the bag.
           </p>
           <Link to="/create">
             <BrutalButton color="bg-brand-yellow text-ink">START A CHALLENGE →</BrutalButton>
