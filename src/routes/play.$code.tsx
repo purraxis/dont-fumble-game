@@ -2,9 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { recordE2eAnswerForResult, supabase } from "@/integrations/supabase/client";
+import { recordE2eAnswerForResult } from "@/integrations/supabase/client";
 import { AppShell, BrutalCard, BrutalButton } from "@/components/AppShell";
 import { submitAnswer } from "@/lib/answer-submission.functions";
+import { loadPlayChallenge, type PlayChallenge } from "@/lib/challenge-read.functions";
 import type { Feedback } from "@/lib/feedback.functions";
 import { verdictForScore } from "@/lib/game";
 import { getOrCreatePlaySessionToken } from "@/lib/play-session";
@@ -16,51 +17,19 @@ export const Route = createFileRoute("/play/$code")({
   component: PlayPage,
 });
 
-type Question = { id: string; text: string };
-type QuestionPackSummary = { name?: string | null; emoji?: string | null } | null;
-type ChallengeData = {
-  id: string;
-  code: string;
-  sender_name: string;
-  pack_id: string;
-  pack_name: string;
-  pack_emoji: string;
-  questions: Question[];
-};
-
 function PlayPage() {
   const { code } = Route.useParams();
   const navigate = useNavigate();
   const runSubmitAnswer = useServerFn(submitAnswer);
+  const runLoadPlayChallenge = useServerFn(loadPlayChallenge);
 
-  const { data, isLoading, error } = useQuery<ChallengeData>({
+  const { data, isLoading, error } = useQuery<PlayChallenge>({
     queryKey: ["play", code],
     retry: false,
-    queryFn: async () => {
-      const { data: ch, error: e1 } = await supabase
-        .from("challenges")
-        .select("id, code, sender_name, pack_id, question_packs(name, emoji)")
-        .eq("code", code)
-        .maybeSingle();
-      if (e1) throw e1;
-      if (!ch) throw new Error("Challenge not found");
-      const { data: qs, error: e2 } = await supabase
-        .from("questions")
-        .select("id, text")
-        .eq("pack_id", ch.pack_id)
-        .order("sort_order");
-      if (e2) throw e2;
-      const pack = ch.question_packs as QuestionPackSummary;
-      return {
-        id: ch.id,
-        code: ch.code,
-        sender_name: ch.sender_name,
-        pack_id: ch.pack_id,
-        pack_name: pack?.name ?? "",
-        pack_emoji: pack?.emoji ?? "",
-        questions: (qs ?? []) as Question[],
-      };
-    },
+    queryFn: async () =>
+      runLoadPlayChallenge({
+        data: { challengeCode: code },
+      }),
   });
 
   const [index, setIndex] = useState(0);
@@ -113,7 +82,7 @@ function PlayPage() {
       });
 
       recordE2eAnswerForResult({
-        challenge_id: data!.id,
+        challenge_id: data!.code,
         question_id: q.id,
         session_token: sessionToken,
         question_text: q.text,
@@ -157,7 +126,7 @@ function PlayPage() {
             Q {index + 1} / {total}
           </span>
           <span className="text-xs font-bold uppercase tracking-widest text-ink/50">
-            {data.pack_emoji} {data.pack_name}
+            {data.packEmoji} {data.packName}
           </span>
         </div>
         <div className="mb-6 h-2 w-full overflow-hidden rounded-full border-2 border-ink bg-white">
@@ -169,7 +138,7 @@ function PlayPage() {
 
         {phase !== "feedback" ? (
           <>
-            <p className="mb-2 text-sm font-bold text-brand-purple">{data.sender_name} asks:</p>
+            <p className="mb-2 text-sm font-bold text-brand-purple">{data.senderName} asks:</p>
             <h1 className="mb-6 break-words font-display text-3xl font-bold leading-tight text-balance">
               "{q?.text}"
             </h1>

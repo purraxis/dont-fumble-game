@@ -9,8 +9,10 @@
 - Moved answer scoring and answer persistence behind the `submitAnswer` server function.
 - Moved result aggregation behind the `loadResult` server function.
 - Moved challenge creation behind the `createChallenge` server function.
+- Moved share/play challenge lookups behind server functions.
 - Added TanStack Start CSRF middleware for server function requests.
 - Locked down browser writes to `challenges` and `answers` with a follow-up RLS migration.
+- Removed public browser reads from `challenges` after moving share/play reads server-side.
 - Kept Lovable AI as the scoring gateway and preserved E2E fake AI/Supabase support.
 - Updated `/packs` to handle empty data and Supabase query errors gracefully.
 
@@ -25,15 +27,14 @@ Allowed to public browser clients:
 
 - Read `question_packs`
 - Read `questions`
-- Read `challenges` for no-login share/play links
 
 Blocked from public browser clients:
 
-- Insert/update/delete `challenges`
+- Select/insert/update/delete `challenges`
 - Select/insert/update/delete `answers`
 - Any direct browser write of scores or result data
 
-`challenges` remain publicly readable as a tradeoff for the current no-login client-side share/play lookup by code. Challenge creation, answer submission, and result aggregation use server functions with the service role key.
+Share/play challenge lookups use server functions with the service role key and return only the fields needed by the UI. Public clients still read packs/questions for discovery, but challenge rows and answer rows are no longer directly exposed to anonymous browser clients.
 
 ## Required Env Vars
 
@@ -53,11 +54,11 @@ Do not prefix `SUPABASE_SERVICE_ROLE_KEY` with `VITE_`; it must stay server-only
 
 ## Manual Supabase Steps
 
-1. Apply migrations, including `supabase/migrations/20260702000100_add_answer_session_tokens.sql` and `supabase/migrations/20260707000100_lock_down_browser_writes.sql`.
+1. Apply migrations, including `supabase/migrations/20260702000100_add_answer_session_tokens.sql`, `supabase/migrations/20260707000100_lock_down_browser_writes.sql`, and `supabase/migrations/20260707000200_remove_public_challenge_reads.sql`.
 2. Seed the database with `supabase/seed.sql`.
 3. Confirm the seed creates 10 packs and 100 questions.
 4. Add `SUPABASE_SERVICE_ROLE_KEY` to the server runtime environment before testing real challenge creation, answer submission, and result aggregation.
 
 ## Next Task
 
-Move challenge/share/play reads fully server-side or introduce narrow read views if you want to reduce public `challenges` read access further.
+Run production-like Supabase QA with the full migration chain, seeded data, real env vars, and the Lovable AI gateway before merging the stabilization branch.

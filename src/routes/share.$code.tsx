@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { AppShell, BrutalCard, BrutalButton } from "@/components/AppShell";
+import { loadShareChallenge, type ShareChallenge } from "@/lib/challenge-read.functions";
 
 export const Route = createFileRoute("/share/$code")({
   head: ({ params }) => ({
@@ -11,10 +12,9 @@ export const Route = createFileRoute("/share/$code")({
   component: SharePage,
 });
 
-type QuestionPackSummary = { name?: string | null; emoji?: string | null } | null;
-
 function SharePage() {
   const { code } = Route.useParams();
+  const runLoadShareChallenge = useServerFn(loadShareChallenge);
   const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -22,21 +22,16 @@ function SharePage() {
     setOrigin(window.location.origin);
   }, []);
 
-  const { data } = useQuery({
+  const { data, error, isLoading } = useQuery<ShareChallenge>({
     queryKey: ["challenge", code],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("challenges")
-        .select("id, code, sender_name, pack_id, question_packs(name, emoji)")
-        .eq("code", code)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
+    retry: false,
+    queryFn: async () =>
+      runLoadShareChallenge({
+        data: { challengeCode: code },
+      }),
   });
 
   const url = origin ? `${origin}/play/${code}` : "";
-  const pack = data?.question_packs as QuestionPackSummary | undefined;
 
   async function share() {
     if (!url) return;
@@ -44,7 +39,7 @@ function SharePage() {
       try {
         await navigator.share({
           title: "Don't Fumble challenge",
-          text: `${data?.sender_name ?? "Someone"} sent you a Don't Fumble challenge. Don't fumble the bag.`,
+          text: `${data?.senderName ?? "Someone"} sent you a Don't Fumble challenge. Don't fumble the bag.`,
           url,
         });
         return;
@@ -73,9 +68,11 @@ function SharePage() {
           </div>
           <div className="my-2 font-display text-6xl font-bold tracking-widest">{code}</div>
           <div className="text-sm font-medium">
-            {pack && (
+            {isLoading && "Loading pack..."}
+            {error && "Challenge details unavailable"}
+            {data && (
               <>
-                Pack: {pack.emoji} {pack.name}
+                Pack: {data.packEmoji} {data.packName}
               </>
             )}
           </div>

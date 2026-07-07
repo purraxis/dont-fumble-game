@@ -36,6 +36,10 @@ describe("RLS lockdown migration", () => {
     resolve("supabase/migrations/20260707000100_lock_down_browser_writes.sql"),
     "utf8",
   );
+  const challengeReadMigrationSql = readFileSync(
+    resolve("supabase/migrations/20260707000200_remove_public_challenge_reads.sql"),
+    "utf8",
+  );
 
   it("keeps public challenge reads but blocks browser challenge writes", () => {
     expect(migrationSql).toContain(
@@ -55,5 +59,27 @@ describe("RLS lockdown migration", () => {
     expect(migrationSql).toContain('DROP POLICY IF EXISTS "anyone can create answer"');
     expect(migrationSql).toContain('DROP POLICY IF EXISTS "anyone can update session answers"');
     expect(migrationSql).toContain("GRANT ALL ON public.answers TO service_role");
+  });
+
+  it("removes direct browser challenge reads once share/play use server functions", () => {
+    expect(challengeReadMigrationSql).toContain(
+      "REVOKE SELECT ON public.challenges FROM anon, authenticated",
+    );
+    expect(challengeReadMigrationSql).toContain(
+      'DROP POLICY IF EXISTS "challenges readable for no-login links"',
+    );
+    expect(challengeReadMigrationSql).toContain("GRANT ALL ON public.challenges TO service_role");
+  });
+});
+
+describe("challenge read routes", () => {
+  const shareRoute = readFileSync(resolve("src/routes/share.$code.tsx"), "utf8");
+  const playRoute = readFileSync(resolve("src/routes/play.$code.tsx"), "utf8");
+
+  it("loads share and play challenge data through server functions", () => {
+    expect(shareRoute).toContain("loadShareChallenge");
+    expect(playRoute).toContain("loadPlayChallenge");
+    expect(shareRoute).not.toContain('.from("challenges")');
+    expect(playRoute).not.toContain('.from("challenges")');
   });
 });

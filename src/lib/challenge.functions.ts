@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { customAlphabet } from "nanoid";
 import { z } from "zod";
+import { recordE2eServerChallenge } from "@/lib/e2e-server-state";
 
 export const MIN_CHALLENGE_QUESTIONS = 2;
 export const MAX_CHALLENGE_CODE_ATTEMPTS = 5;
@@ -111,8 +112,12 @@ async function createE2eChallenge(input: CreateChallengeInput) {
     async countQuestions() {
       return 2;
     },
-    async insertChallenge() {
-      return;
+    async insertChallenge(challenge) {
+      recordE2eServerChallenge({
+        code: challenge.code,
+        senderName: challenge.sender_name,
+        packId: challenge.pack_id,
+      });
     },
   });
 }
