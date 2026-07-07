@@ -54,11 +54,14 @@ Do not prefix `SUPABASE_SERVICE_ROLE_KEY` with `VITE_`; it must stay server-only
 
 ## Manual Supabase Steps
 
-1. Apply migrations, including `supabase/migrations/20260702000100_add_answer_session_tokens.sql`, `supabase/migrations/20260707000100_lock_down_browser_writes.sql`, and `supabase/migrations/20260707000200_remove_public_challenge_reads.sql`.
-2. Seed the database with `supabase/seed.sql`.
-3. Confirm the seed creates 10 packs and 100 questions.
-4. Add `SUPABASE_SERVICE_ROLE_KEY` to the server runtime environment before testing real challenge creation, answer submission, and result aggregation.
+1. Install or make available the Supabase CLI.
+2. Link the project if needed with `supabase link --project-ref yinfdtueximonyzlnldq`.
+3. Apply migrations, including `supabase/migrations/20260702000100_add_answer_session_tokens.sql`, `supabase/migrations/20260707000100_lock_down_browser_writes.sql`, and `supabase/migrations/20260707000200_remove_public_challenge_reads.sql`.
+4. Seed the database with `supabase/seed.sql`.
+5. Confirm the seed creates 10 packs and 100 questions.
+6. Add `SUPABASE_SERVICE_ROLE_KEY` and `LOVABLE_API_KEY` to the server runtime environment before testing real challenge creation, answer submission, and result aggregation.
+7. Run the production-like QA checklist in `docs/launch-checklist.md`.
 
 ## Next Task
 
-Run production-like Supabase QA with the full migration chain, seeded data, real env vars, and the Lovable AI gateway before merging the stabilization branch.
+Apply the full migration and seed chain to the production Supabase project, add the missing server-only env vars, then rerun the production-like QA checklist before merging the stabilization branch.
