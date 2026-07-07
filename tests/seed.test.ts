@@ -30,3 +30,30 @@ describe("answer session migration", () => {
     expect(migrationSql).toContain("GRANT UPDATE ON public.answers");
   });
 });
+
+describe("RLS lockdown migration", () => {
+  const migrationSql = readFileSync(
+    resolve("supabase/migrations/20260707000100_lock_down_browser_writes.sql"),
+    "utf8",
+  );
+
+  it("keeps public challenge reads but blocks browser challenge writes", () => {
+    expect(migrationSql).toContain(
+      "REVOKE INSERT, UPDATE, DELETE ON public.challenges FROM anon, authenticated",
+    );
+    expect(migrationSql).toContain('DROP POLICY IF EXISTS "anyone can create challenge"');
+    expect(migrationSql).toContain('CREATE POLICY "challenges readable for no-login links"');
+    expect(migrationSql).toContain("FOR SELECT");
+    expect(migrationSql).toContain("GRANT SELECT ON public.challenges TO anon, authenticated");
+  });
+
+  it("blocks browser answer reads and writes while preserving service role access", () => {
+    expect(migrationSql).toContain(
+      "REVOKE SELECT, INSERT, UPDATE, DELETE ON public.answers FROM anon, authenticated",
+    );
+    expect(migrationSql).toContain('DROP POLICY IF EXISTS "answers readable by anyone"');
+    expect(migrationSql).toContain('DROP POLICY IF EXISTS "anyone can create answer"');
+    expect(migrationSql).toContain('DROP POLICY IF EXISTS "anyone can update session answers"');
+    expect(migrationSql).toContain("GRANT ALL ON public.answers TO service_role");
+  });
+});
