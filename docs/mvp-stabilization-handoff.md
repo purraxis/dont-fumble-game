@@ -9,6 +9,7 @@
 - Moved answer scoring and answer persistence behind the `submitAnswer` server function.
 - Moved result aggregation behind the `loadResult` server function.
 - Moved challenge creation behind the `createChallenge` server function.
+- Added TanStack Start CSRF middleware for server function requests.
 - Kept Lovable AI as the scoring gateway and preserved E2E fake AI/Supabase support.
 - Updated `/packs` to handle empty data and Supabase query errors gracefully.
 
